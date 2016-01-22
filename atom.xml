@@ -4,7 +4,7 @@
   <title><![CDATA[阴影下的博客]]></title>
   <link href="http://loveshadow.github.io/atom.xml" rel="self"/>
   <link href="http://loveshadow.github.io/"/>
-  <updated>2016-01-22T11:38:04+08:00</updated>
+  <updated>2016-01-22T14:33:44+08:00</updated>
   <id>http://loveshadow.github.io/</id>
   <author>
     <name><![CDATA[李曌]]></name>
@@ -12,14 +12,5 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
-  
-  <entry>
-    <title type="html"><![CDATA[title]]></title>
-    <link href="http://loveshadow.github.io/blog/2016/01/21/title/"/>
-    <updated>2016-01-21T17:41:35+08:00</updated>
-    <id>http://loveshadow.github.io/blog/2016/01/21/title</id>
-    <content type="html"><![CDATA[
-]]></content>
-  </entry>
   
 </feed>
