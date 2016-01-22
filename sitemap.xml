@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>http://yoursite.com/blog/archives/</loc>
+    <loc>http://loveshadow.github.io/archives/</loc>
   </url>
   <url>
-    <loc>http://yoursite.com/archives/</loc>
+    <loc>http://loveshadow.github.io/about/</loc>
   </url>
   <url>
-    <loc>http://yoursite.com/blog/</loc>
+    <loc>http://loveshadow.github.io/blog/archives/</loc>
   </url>
   <url>
-    <loc>http://yoursite.com/</loc>
+    <loc>http://loveshadow.github.io/blog/</loc>
+  </url>
+  <url>
+    <loc>http://loveshadow.github.io/</loc>
   </url>
 </urlset>
