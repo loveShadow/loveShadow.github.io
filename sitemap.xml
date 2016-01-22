@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://loveshadow.github.io/blog/2016/01/22/DES%E5%92%8CDESede%E5%8A%A0%E5%AF%86%E5%AD%A6%E4%B9%A0/</loc>
+    <lastmod>2016-01-22T14:40:58+08:00</lastmod>
+  </url>
+  <url>
     <loc>http://loveshadow.github.io/archives/</loc>
   </url>
   <url>
@@ -14,5 +18,8 @@
   </url>
   <url>
     <loc>http://loveshadow.github.io/</loc>
+  </url>
+  <url>
+    <loc>http://loveshadow.github.io/blog/categories/android/</loc>
   </url>
 </urlset>
