@@ -19,7 +19,11 @@
 	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
 	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+
+	<!--替换Google JS公共库-->
+	<script src="//libs.baidu.com/jquery/1.7.2/jquery.min.js"></script>
+	<!--<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>-->
+
 	<script type="text/javascript" src="/javascripts/jquery.fancybox.pack.js"></script>
 
 <script language="Javascript" type="text/javascript">
@@ -56,7 +60,16 @@ $(document).ready(
 );
 </script>
 
-	
+	<script>
+  function addBlankTargetForLinks () {
+    $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+    });
+  }
+  $(document).bind('DOMNodeInserted', function(event) {
+    addBlankTargetForLinks();
+  });
+</script>
 </head>
 
 
@@ -109,7 +122,7 @@ $(document).ready(
 	<section class="archives"><h1 class="year">2016</h1>
 
 <article>
-	<h2 class="title"><a href="/blog/2016/01/22/DES%E5%92%8CDESede%E5%8A%A0%E5%AF%86%E5%AD%A6%E4%B9%A0/">DES和DESede加密学习</a></h2>
+	<h2 class="title"><a href="/blog/2016/01/22/DES_he_DESede_jia_mi_xue_xi/">DES和DESede加密学习</a></h2>
 	<div class="meta">
 		<div class="date">Jan 22</div>
 		
