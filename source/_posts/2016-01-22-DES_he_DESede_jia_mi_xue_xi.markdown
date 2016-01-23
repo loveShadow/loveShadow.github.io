@@ -8,16 +8,15 @@ categories: android
 ### DES和DESede算法了解以及在android中的使用 ###
 ##### 1. 算法介绍 #####
 首先DES和DESede是对称加密，DESede是对DES算法改进的三重加密算法，不过处理速度也变得较慢，密钥计算时间较长
+<!--more-->
 ##### 2. 在android中的应用
 ###### 2.1 DES使用
 首先看一下使用代码
-```java
-
+{% codeblock java DES.java %}
 	public static final String KEY_ALGORITHM = "DES";
 
 	//格式：加密(解密)算法/工作模式/填充模式
 	public static final String CIPHER_ALGORITHM = "DES/ECB/PKCS5Padding";
-
     //编码
     public static byte[] desEncodeECB(String _key, String _data) {
 	    try {
@@ -50,19 +49,18 @@ categories: android
             return null;
         }
     }
-```
+{% endcodeblock %}
+
 **基本流程如下:**
 
 ① 实例化密钥规范
-```java
-DESKeySpec.java
-``` 
+
 从源码中可以看到密钥的字节长度为 8
-```java
+{% codeblock java DESKeySpec.java %}
 public static final int DES_KEY_LEN = 8;	
-```
+{% endcodeblock %}
 构造方法
-```java
+{% codeblock java DESKeySpec.java%}
 	/**
 	 * key的长度不能 < 8
 	 */
@@ -83,13 +81,10 @@ public static final int DES_KEY_LEN = 8;
         this.key = new byte[DES_KEY_LEN];
         System.arraycopy(key, offset, this.key, 0, DES_KEY_LEN);
     }
-```
+{% endcodeblock %}
 ② 接着实例化密钥工厂
-```java
-SecretKeyFactory.java
-```
-获取方法
-```java
+
+{% codeblock java SecretKeyFactory.java %}
 	/**
 	 * @param algorithm 算法名称(eg. DES)
 	 */ 
@@ -113,7 +108,7 @@ SecretKeyFactory.java
         this.algorithm = algorithm;
         this.spiImpl = keyFacSpi;
     }
-```
+{% endcodeblock %}
 可以明显的看到是`Engine.SpiAndProvider`是主角。
 一些概念：
 `Engine`顾名思义，是引擎的意思。其实就是一个一个功能的封装。
@@ -123,24 +118,20 @@ SecretKeyFactory.java
 总之，这块会拿到一个密钥工厂对象
 
 ③ 根据密钥规范生成密钥
-```java
-SecretKeyFactory.java
-```
+
 生成方法
-```java
+{% codeblock java SecretKeyFactory.java %}
 	public final SecretKey generateSecret(KeySpec keySpec)
             throws InvalidKeySpecException {
         return spiImpl.engineGenerateSecret(keySpec);
     }
-```
+{% endcodeblock %}
 调用的是加密模块的方法
 
 ④ 获取加/解密类对象，并使用
-```java
-Cipher.java
-```
+
 不能实例化，获取对象
-```java
+{% codeblock java Cipher.java%}
 	public final byte[] doFinal(byte[] input) throws IllegalBlockSizeException,
             BadPaddingException {
         if (mode != ENCRYPT_MODE && mode != DECRYPT_MODE) {
@@ -148,7 +139,7 @@ Cipher.java
         }
         return spiImpl.engineDoFinal(input, 0, input.length);
     }
-```
+{% endcodeblock %}
 
 到此为止，android中DES加/解密的使用就学习到这。
 
