@@ -1,0 +1,649 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<script data-cfasync="false" type="text/javascript" src="//use.typekit.net/axj3cfp.js"></script>
+	<script data-cfasync="false" type="text/javascript">try{Typekit.load();}catch(e){}</script>
+	<meta charset="utf-8">
+	<title>View之onLayout()学习  | 阴影下的博客</title>
+
+<meta name="author" content="李曌"> 
+
+<meta name="description" content="View的layout流程学习 1.View的layout是干啥的？ 父容器根据子控件的大小(例如：测量规格结果)及布局参数将子控件放在窗口合适的位置上。
+layout流程跟measure的流程大致一样，也是从根布局出发，所包含的子控件逐一执行，直至layout结束。 2. &hellip;"> <meta name="keywords" content="">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="阴影下的博客" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="/stylesheets/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+
+	<!--替换Google JS公共库-->
+	<script src="//libs.baidu.com/jquery/1.7.2/jquery.min.js"></script>
+	<!--<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>-->
+
+	<script type="text/javascript" src="/javascripts/jquery.fancybox.pack.js"></script>
+
+<script language="Javascript" type="text/javascript">
+$(document).ready(
+  function() {
+    (function($) {
+      $(".fancybox[data-content-id]").each(function() {
+        this.href = $(this).data('content-id');
+      });
+      $(".fancybox").fancybox({
+        beforeLoad: function() {
+          var el, 
+              id = $(this.element).data('title-id');
+
+          if (id) {
+            el = $('#' + id);
+
+            if (el.length) {
+              this.title = el.html();
+            }
+          }
+          if ($(this).data('content')) {
+            this.content = $(this).data('content');
+          }
+        },
+        helpers: {
+          title: {
+            type: 'inside'
+          }
+        }
+      });
+    })(jQuery);
+  }
+);
+</script>
+
+	<script>
+  function addBlankTargetForLinks () {
+    $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+    });
+  }
+  $(document).bind('DOMNodeInserted', function(event) {
+    addBlankTargetForLinks();
+  });
+</script>
+</head>
+
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">阴影下的博客</a></h1>
+<!-- text-align:center  标题居中 
+	 padding-left:300px	左边填充300px
+-->
+<br>
+<h5><div class="text" style=" text-align:center; padding-left:300px">不积跬步，无以至千里；不积小流，无以成江海。</div></h5>
+<nav id="main-nav"><ul>
+	<li><a href="/">博客</a></li>
+	<li><a href="/about">关于</a></li>
+	<li><a href="/portfolio">Portfolio</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul>
+	<li><a href="/">博客</a></li>
+	<li><a href="/about">关于</a></li>
+	<li><a href="/portfolio">Portfolio</a></li>
+	<li><a href="/archives">Archive</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:loveshadow.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+
+
+</header>
+
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">View之onLayout()学习</h2>
+	<div class="entry-content"><h2>View的layout流程学习</h2>
+
+<h4>1.View的layout是干啥的？</h4>
+
+<p>父容器根据子控件的大小(例如：测量规格结果)及布局参数将子控件放在<code>窗口合适的位置上</code>。
+layout流程跟measure的流程大致一样，也是从<code>根布局</code>出发，所包含的子控件逐一执行，直至layout结束。</p>
+
+<!--more-->
+
+
+<h4>2.从ViewRootImpl开始</h4>
+
+<p>这块再重复一下<code>ViewRootImpl</code>，<code>ViewRootImpl</code>是连接<code>WindowManager</code>和<code>DecorView</code>的纽带。而<code>DecorView</code>则是<code>根布局</code>
+首先看一下<code>ViewRootImpl</code>的<code>performLayout</code>方法</p>
+
+<p><code>performLayout</code>方法较长，分段理解：</p>
+
+<figure class='code'><figcaption><span>java ViewRootImpl.java </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">private</span> <span class="kt">void</span> <span class="nf">performLayout</span><span class="o">(</span><span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span> <span class="n">lp</span><span class="o">,</span> <span class="kt">int</span> <span class="n">desiredWindowWidth</span><span class="o">,</span>
+</span><span class='line'>            <span class="kt">int</span> <span class="n">desiredWindowHeight</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">mLayoutRequested</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>        <span class="n">mScrollMayChange</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>        <span class="c1">//标志位(表示在layout过程中)</span>
+</span><span class='line'>        <span class="n">mInLayout</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>        <span class="c1">//mView 即DecorView,根布局</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">View</span> <span class="n">host</span> <span class="o">=</span> <span class="n">mView</span><span class="o">;</span>
+</span><span class='line'>        <span class="c1">//layout跟踪(还不是很了解)</span>
+</span><span class='line'>        <span class="n">Trace</span><span class="o">.</span><span class="na">traceBegin</span><span class="o">(</span><span class="n">Trace</span><span class="o">.</span><span class="na">TRACE_TAG_VIEW</span><span class="o">,</span> <span class="s">&quot;layout&quot;</span><span class="o">);</span>
+</span><span class='line'>        <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">//调用DecorView的layout方法</span>
+</span><span class='line'>            <span class="n">host</span><span class="o">.</span><span class="na">layout</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">host</span><span class="o">.</span><span class="na">getMeasuredWidth</span><span class="o">(),</span> <span class="n">host</span><span class="o">.</span><span class="na">getMeasuredHeight</span><span class="o">());</span>
+</span><span class='line'>            <span class="c1">//置位标志位</span>
+</span><span class='line'>            <span class="n">mInLayout</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>            <span class="kt">int</span> <span class="n">numViewsRequestingLayout</span> <span class="o">=</span> <span class="n">mLayoutRequesters</span><span class="o">.</span><span class="na">size</span><span class="o">();</span>
+</span><span class='line'>            <span class="c1">//...（略）</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">Trace</span><span class="o">.</span><span class="na">traceEnd</span><span class="o">(</span><span class="n">Trace</span><span class="o">.</span><span class="na">TRACE_TAG_VIEW</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="n">mInLayout</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>从上述代码理解，<code>performLayout</code>方法中只是调用了<code>根布局</code>的layout方法</p>
+
+<p>接下来看下<code>performLayout</code>方法中省略的部分</p>
+
+<figure class='code'><figcaption><span>java ViewRootImpl.java </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>         <span class="k">if</span> <span class="o">(</span><span class="n">numViewsRequestingLayout</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>              <span class="c1">//requestLayout() 没有被调用则无所谓，如果有View请求了，这块需要明确的去处理</span>
+</span><span class='line'>              <span class="cm">/** 从mLayoutRequesters获取显示的(非GONE)或者强制layout的(View.PFLAG_FORCE_LAYOUT标志) */</span>
+</span><span class='line'>                <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;</span> <span class="n">validLayoutRequesters</span> <span class="o">=</span> <span class="n">getValidLayoutRequesters</span><span class="o">(</span><span class="n">mLayoutRequesters</span><span class="o">,</span>
+</span><span class='line'>                        <span class="kc">false</span><span class="o">);</span>
+</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">validLayoutRequesters</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="c1">// 设置标志(用于标识正在处理 请求刷新布局 中)</span>
+</span><span class='line'>                    <span class="n">mHandlingLayoutInLayoutRequest</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>                  <span class="c1">//步骤： 刷新请求的布局 --&gt; 测量 --&gt; 布局</span>
+</span><span class='line'>                    <span class="kt">int</span> <span class="n">numValidRequests</span> <span class="o">=</span> <span class="n">validLayoutRequesters</span><span class="o">.</span><span class="na">size</span><span class="o">();</span>
+</span><span class='line'>                    <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numValidRequests</span><span class="o">;</span> <span class="o">++</span><span class="n">i</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="kd">final</span> <span class="n">View</span> <span class="n">view</span> <span class="o">=</span> <span class="n">validLayoutRequesters</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+</span><span class='line'>                      <span class="c1">//调用View的requestLayout(当某些东西的改变布局已经失效，调用此方法刷新布局)</span>
+</span><span class='line'>                        <span class="n">view</span><span class="o">.</span><span class="na">requestLayout</span><span class="o">();</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>                    <span class="n">measureHierarchy</span><span class="o">(</span><span class="n">host</span><span class="o">,</span> <span class="n">lp</span><span class="o">,</span> <span class="n">mView</span><span class="o">.</span><span class="na">getContext</span><span class="o">().</span><span class="na">getResources</span><span class="o">(),</span>
+</span><span class='line'>                            <span class="n">desiredWindowWidth</span><span class="o">,</span> <span class="n">desiredWindowHeight</span><span class="o">);</span>
+</span><span class='line'>                    <span class="n">mInLayout</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>                    <span class="n">host</span><span class="o">.</span><span class="na">layout</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">host</span><span class="o">.</span><span class="na">getMeasuredWidth</span><span class="o">(),</span> <span class="n">host</span><span class="o">.</span><span class="na">getMeasuredHeight</span><span class="o">());</span>
+</span><span class='line'>
+</span><span class='line'>                    <span class="n">mHandlingLayoutInLayoutRequest</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>                    <span class="c1">//再次检查请求的布局(第二次，注意第二个参数)</span>
+</span><span class='line'>                    <span class="n">validLayoutRequesters</span> <span class="o">=</span> <span class="n">getValidLayoutRequesters</span><span class="o">(</span><span class="n">mLayoutRequesters</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+</span><span class='line'>                    <span class="k">if</span> <span class="o">(</span><span class="n">validLayoutRequesters</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="kd">final</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;</span> <span class="n">finalRequesters</span> <span class="o">=</span> <span class="n">validLayoutRequesters</span><span class="o">;</span>
+</span><span class='line'>                        <span class="c1">// Post second-pass requests to the next frame</span>
+</span><span class='line'>                        <span class="n">getRunQueue</span><span class="o">().</span><span class="na">post</span><span class="o">(</span><span class="k">new</span> <span class="nf">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="nd">@Override</span>
+</span><span class='line'>                            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                                <span class="kt">int</span> <span class="n">numValidRequests</span> <span class="o">=</span> <span class="n">finalRequesters</span><span class="o">.</span><span class="na">size</span><span class="o">();</span>
+</span><span class='line'>                                <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numValidRequests</span><span class="o">;</span> <span class="o">++</span><span class="n">i</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                                    <span class="kd">final</span> <span class="n">View</span> <span class="n">view</span> <span class="o">=</span> <span class="n">finalRequesters</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+</span><span class='line'>                                    <span class="n">Log</span><span class="o">.</span><span class="na">w</span><span class="o">(</span><span class="s">&quot;View&quot;</span><span class="o">,</span> <span class="s">&quot;requestLayout() improperly called by &quot;</span> <span class="o">+</span> <span class="n">view</span> <span class="o">+</span>
+</span><span class='line'>                                            <span class="s">&quot; during second layout pass: posting in next frame&quot;</span><span class="o">);</span>
+</span><span class='line'>                                    <span class="n">view</span><span class="o">.</span><span class="na">requestLayout</span><span class="o">();</span>
+</span><span class='line'>                                <span class="o">}</span>
+</span><span class='line'>                            <span class="o">}</span>
+</span><span class='line'>                        <span class="o">});</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>                <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这段代码处理了<code>在布局过程中请求刷新布局的View，对这些View进行重新布局</code>,将请求的<code>View</code>保存在<code>mLayoutRequesters</code>中，在布局结束后处理。</p>
+
+<h4>3. 看一下DecorView的layout方法</h4>
+
+<p>看了一下<code>DecorView</code>的代码，没有重载<code>layout()</code>方法，它的父类<code>FrameLayout</code>也没有重载，直到看到<code>ViewGroup</code>的<code>layout()</code>方法</p>
+
+<figure class='code'><figcaption><span>java ViewGroup.java </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kd">final</span> <span class="kt">void</span> <span class="nf">layout</span><span class="o">(</span><span class="kt">int</span> <span class="n">l</span><span class="o">,</span> <span class="kt">int</span> <span class="n">t</span><span class="o">,</span> <span class="kt">int</span> <span class="n">r</span><span class="o">,</span> <span class="kt">int</span> <span class="n">b</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(!</span><span class="n">mSuppressLayout</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">mTransition</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="o">!</span><span class="n">mTransition</span><span class="o">.</span><span class="na">isChangingLayout</span><span class="o">()))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">mTransition</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">mTransition</span><span class="o">.</span><span class="na">layoutChange</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>          <span class="c1">//它这也没做什么事，直接调用的是View的layout方法</span>
+</span><span class='line'>            <span class="kd">super</span><span class="o">.</span><span class="na">layout</span><span class="o">(</span><span class="n">l</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">r</span><span class="o">,</span> <span class="n">b</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// record the fact that we noop&#39;d it; request layout when transition finishes</span>
+</span><span class='line'>            <span class="n">mLayoutCalledWhileSuppressed</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>参数为：左、上、右、下的值，当然，作为<code>DecorView</code>，它的参数肯定为<code>(0, 0, WindowWidth, WindowHeight)</code></p>
+
+<h4>4. View的layout方法</h4>
+
+<figure class='code'><figcaption><span>java View.java </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">layout</span><span class="o">(</span><span class="kt">int</span> <span class="n">l</span><span class="o">,</span> <span class="kt">int</span> <span class="n">t</span><span class="o">,</span> <span class="kt">int</span> <span class="n">r</span><span class="o">,</span> <span class="kt">int</span> <span class="n">b</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="c1">//处理PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT标识(布局前是否需要measure测量)</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">((</span><span class="n">mPrivateFlags3</span> <span class="o">&amp;</span> <span class="n">PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">onMeasure</span><span class="o">(</span><span class="n">mOldWidthMeasureSpec</span><span class="o">,</span> <span class="n">mOldHeightMeasureSpec</span><span class="o">);</span>
+</span><span class='line'>            <span class="n">mPrivateFlags3</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="c1">//保存老的位置</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">oldL</span> <span class="o">=</span> <span class="n">mLeft</span><span class="o">;</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">oldT</span> <span class="o">=</span> <span class="n">mTop</span><span class="o">;</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">oldB</span> <span class="o">=</span> <span class="n">mBottom</span><span class="o">;</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">oldR</span> <span class="o">=</span> <span class="n">mRight</span><span class="o">;</span>
+</span><span class='line'>      <span class="c1">//判断布局有没有更改</span>
+</span><span class='line'>        <span class="kt">boolean</span> <span class="n">changed</span> <span class="o">=</span> <span class="n">isLayoutModeOptical</span><span class="o">(</span><span class="n">mParent</span><span class="o">)</span> <span class="o">?</span>
+</span><span class='line'>                <span class="n">setOpticalFrame</span><span class="o">(</span><span class="n">l</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">r</span><span class="o">,</span> <span class="n">b</span><span class="o">)</span> <span class="o">:</span> <span class="n">setFrame</span><span class="o">(</span><span class="n">l</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">r</span><span class="o">,</span> <span class="n">b</span><span class="o">);</span>
+</span><span class='line'>      <span class="c1">//如果更改了 或者 View要求被Layout</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">changed</span> <span class="o">||</span> <span class="o">(</span><span class="n">mPrivateFlags</span> <span class="o">&amp;</span> <span class="n">PFLAG_LAYOUT_REQUIRED</span><span class="o">)</span> <span class="o">==</span> <span class="n">PFLAG_LAYOUT_REQUIRED</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">//调用onLayout</span>
+</span><span class='line'>            <span class="n">onLayout</span><span class="o">(</span><span class="n">changed</span><span class="o">,</span> <span class="n">l</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">r</span><span class="o">,</span> <span class="n">b</span><span class="o">);</span>
+</span><span class='line'>          <span class="c1">//清除标志</span>
+</span><span class='line'>            <span class="n">mPrivateFlags</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">PFLAG_LAYOUT_REQUIRED</span><span class="o">;</span>
+</span><span class='line'>          <span class="c1">//依次通知向View注册监听器的</span>
+</span><span class='line'>            <span class="n">ListenerInfo</span> <span class="n">li</span> <span class="o">=</span> <span class="n">mListenerInfo</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">li</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">li</span><span class="o">.</span><span class="na">mOnLayoutChangeListeners</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">OnLayoutChangeListener</span><span class="o">&gt;</span> <span class="n">listenersCopy</span> <span class="o">=</span>
+</span><span class='line'>                        <span class="o">(</span><span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">OnLayoutChangeListener</span><span class="o">&gt;)</span><span class="n">li</span><span class="o">.</span><span class="na">mOnLayoutChangeListeners</span><span class="o">.</span><span class="na">clone</span><span class="o">();</span>
+</span><span class='line'>                <span class="kt">int</span> <span class="n">numListeners</span> <span class="o">=</span> <span class="n">listenersCopy</span><span class="o">.</span><span class="na">size</span><span class="o">();</span>
+</span><span class='line'>                <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numListeners</span><span class="o">;</span> <span class="o">++</span><span class="n">i</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">listenersCopy</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">).</span><span class="na">onLayoutChange</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">l</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">r</span><span class="o">,</span> <span class="n">b</span><span class="o">,</span> <span class="n">oldL</span><span class="o">,</span> <span class="n">oldT</span><span class="o">,</span> <span class="n">oldR</span><span class="o">,</span> <span class="n">oldB</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>      <span class="c1">//清除强制刷新布局的标志</span>
+</span><span class='line'>        <span class="n">mPrivateFlags</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">PFLAG_FORCE_LAYOUT</span><span class="o">;</span>
+</span><span class='line'>      <span class="c1">//加上布局完成的标志</span>
+</span><span class='line'>        <span class="n">mPrivateFlags3</span> <span class="o">|=</span> <span class="n">PFLAG3_IS_LAID_OUT</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>从这段代码可以了解到，在<code>View</code>的<code>layout</code>方法中，主要进行了两件事：
+1. 判断View的布局是否改变
+2. 调用View的<code>onLayout</code>方法进行布局处理</p>
+
+<h4>5. 判断View的布局是否更改</h4>
+
+<figure class='code'><figcaption><span>java View.java </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kt">boolean</span> <span class="n">changed</span> <span class="o">=</span> <span class="n">isLayoutModeOptical</span><span class="o">(</span><span class="n">mParent</span><span class="o">)</span> <span class="o">?</span>
+</span><span class='line'>                <span class="n">setOpticalFrame</span><span class="o">(</span><span class="n">l</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">r</span><span class="o">,</span> <span class="n">b</span><span class="o">)</span> <span class="o">:</span> <span class="n">setFrame</span><span class="o">(</span><span class="n">l</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">r</span><span class="o">,</span> <span class="n">b</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ol>
+<li><p>isLayoutModeOptical方法：这个方法我们在measure流程中提到过，是判断ViewGroup的布局模式是不是光学模式<code>LAYOUT_MODE_OPTICAL_BOUNDS</code></p></li>
+<li><p>setOpticalFrame方法：对光学模式特殊处理</p></li>
+<li><p>setFrame方法：分配大小和位置，还记得我们在measure中说过，measure最后的宽高并不是View真正显示出来的宽高，是要经过layout的</p></li>
+</ol>
+
+
+<figure class='code'><figcaption><span>java View.java </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">protected</span> <span class="kt">boolean</span> <span class="nf">setFrame</span><span class="o">(</span><span class="kt">int</span> <span class="n">left</span><span class="o">,</span> <span class="kt">int</span> <span class="n">top</span><span class="o">,</span> <span class="kt">int</span> <span class="n">right</span><span class="o">,</span> <span class="kt">int</span> <span class="n">bottom</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="kt">boolean</span> <span class="n">changed</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>      <span class="k">if</span> <span class="o">(</span><span class="n">mLeft</span> <span class="o">!=</span> <span class="n">left</span> <span class="o">||</span> <span class="n">mRight</span> <span class="o">!=</span> <span class="n">right</span> <span class="o">||</span> <span class="n">mTop</span> <span class="o">!=</span> <span class="n">top</span> <span class="o">||</span> <span class="n">mBottom</span> <span class="o">!=</span> <span class="n">bottom</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="n">changed</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>          <span class="c1">//临时保存PFLAG_DRAWN标志的值</span>
+</span><span class='line'>          <span class="kt">int</span> <span class="n">drawn</span> <span class="o">=</span> <span class="n">mPrivateFlags</span> <span class="o">&amp;</span> <span class="n">PFLAG_DRAWN</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>          <span class="c1">//判断大小有没有变</span>
+</span><span class='line'>          <span class="kt">int</span> <span class="n">oldWidth</span> <span class="o">=</span> <span class="n">mRight</span> <span class="o">-</span> <span class="n">mLeft</span><span class="o">;</span>
+</span><span class='line'>          <span class="kt">int</span> <span class="n">oldHeight</span> <span class="o">=</span> <span class="n">mBottom</span> <span class="o">-</span> <span class="n">mTop</span><span class="o">;</span>
+</span><span class='line'>          <span class="kt">int</span> <span class="n">newWidth</span> <span class="o">=</span> <span class="n">right</span> <span class="o">-</span> <span class="n">left</span><span class="o">;</span>
+</span><span class='line'>          <span class="kt">int</span> <span class="n">newHeight</span> <span class="o">=</span> <span class="n">bottom</span> <span class="o">-</span> <span class="n">top</span><span class="o">;</span>
+</span><span class='line'>          <span class="kt">boolean</span> <span class="n">sizeChanged</span> <span class="o">=</span> <span class="o">(</span><span class="n">newWidth</span> <span class="o">!=</span> <span class="n">oldWidth</span><span class="o">)</span> <span class="o">||</span> <span class="o">(</span><span class="n">newHeight</span> <span class="o">!=</span> <span class="n">oldHeight</span><span class="o">);</span>
+</span><span class='line'>  
+</span><span class='line'>          <span class="n">invalidate</span><span class="o">(</span><span class="n">sizeChanged</span><span class="o">);</span>
+</span><span class='line'>  
+</span><span class='line'>          <span class="c1">//保存位置</span>
+</span><span class='line'>          <span class="n">mLeft</span> <span class="o">=</span> <span class="n">left</span><span class="o">;</span>
+</span><span class='line'>          <span class="n">mTop</span> <span class="o">=</span> <span class="n">top</span><span class="o">;</span>
+</span><span class='line'>          <span class="n">mRight</span> <span class="o">=</span> <span class="n">right</span><span class="o">;</span>
+</span><span class='line'>          <span class="n">mBottom</span> <span class="o">=</span> <span class="n">bottom</span><span class="o">;</span>
+</span><span class='line'>          <span class="n">mRenderNode</span><span class="o">.</span><span class="na">setLeftTopRightBottom</span><span class="o">(</span><span class="n">mLeft</span><span class="o">,</span> <span class="n">mTop</span><span class="o">,</span> <span class="n">mRight</span><span class="o">,</span> <span class="n">mBottom</span><span class="o">);</span>
+</span><span class='line'>  
+</span><span class='line'>          <span class="c1">//增加PFLAG_HAS_BOUNDS标志，表示View已经有了边界</span>
+</span><span class='line'>          <span class="n">mPrivateFlags</span> <span class="o">|=</span> <span class="n">PFLAG_HAS_BOUNDS</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>          <span class="c1">//大小变化</span>
+</span><span class='line'>          <span class="k">if</span> <span class="o">(</span><span class="n">sizeChanged</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>              <span class="n">sizeChange</span><span class="o">(</span><span class="n">newWidth</span><span class="o">,</span> <span class="n">newHeight</span><span class="o">,</span> <span class="n">oldWidth</span><span class="o">,</span> <span class="n">oldHeight</span><span class="o">);</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>          <span class="k">if</span> <span class="o">((</span><span class="n">mViewFlags</span> <span class="o">&amp;</span> <span class="n">VISIBILITY_MASK</span><span class="o">)</span> <span class="o">==</span> <span class="n">VISIBLE</span> <span class="o">||</span> <span class="n">mGhostView</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>              <span class="c1">//这个目的是为了防止在调用setFrame方法前调用了invalidate方法，导致PFLAG_DRAWN标志失效，所以这块强制加上(不是很理解)</span>
+</span><span class='line'>              <span class="n">mPrivateFlags</span> <span class="o">|=</span> <span class="n">PFLAG_DRAWN</span><span class="o">;</span>
+</span><span class='line'>              <span class="n">invalidate</span><span class="o">(</span><span class="n">sizeChanged</span><span class="o">);</span>
+</span><span class='line'>              <span class="c1">//内部加上父容器的PFLAG_INVALIDATED标志，为了让父容器失效，跟子控件一起渲染</span>
+</span><span class='line'>              <span class="n">invalidateParentCaches</span><span class="o">();</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>          <span class="c1">//重新恢复drawn标志</span>
+</span><span class='line'>          <span class="n">mPrivateFlags</span> <span class="o">|=</span> <span class="n">drawn</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>          <span class="n">mBackgroundSizeChanged</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>          <span class="n">notifySubtreeAccessibilityStateChangedIfNeeded</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">changed</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>6. View的onLayout()方法</h4>
+
+<p>DecorView并没有重载onLayout()方法，而是使用的是父类</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-01-23T14:19:21+08:00" pubdate data-updated="true"></time></div>
+	
+
+<div class="tags">
+
+	<a class='category' href='/blog/categories/android/'>android</a>
+
+</div>
+
+
+	
+</div></article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+	
+	
+	
+<!---	<a class="addthis_counter addthis_pill_style"></a> --->
+	</div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+
+
+
+  <section>
+   <body>
+<!-- 多说评论框 start -->
+<div class="ds-thread" data-thread-key="/blog/2016/01/23/view-zhi-onlayout-study" data-title="View之onLayout()学习" data-url="http://loveshadow.github.io/blog/2016/01/23/view-zhi-onlayout-study/"></div>
+<!-- 多说评论框 end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    var duoshuoQuery = {short_name:"loveshadow"};
+    (function() {
+
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+     })();
+ </script>
+ <!-- 多说公共JS代码 end -->
+ </body>
+  </section>
+ 
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h2>最新文章</h2>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2016/02/18/notification-study/">状态栏通知 - Notification</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/02/18/remoteview-study/">remoteView学习笔记</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/01/23/view-zhi-onlayout-study/">View之onLayout()学习</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/01/22/DES_he_DESede_jia_mi_xue_xi/">DES和DESede加密学习</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+<section>
+  <h2>文章分类</h2>
+  <ul id="categories">
+    <li class='category'><a href='/blog/categories/android/'>android (4)</a></li>
+
+  </ul>
+</section><section>
+  <h2>访客统计</h2>
+  <br/>
+  <a href="http://info.flagcounter.com/uUHz"><img src="http://s01.flagcounter.com/count2/uUHz/bg_FFFFFF/txt_000000/border_CCCCCC/columns_3/maxflags_12/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</section>
+  
+</aside>
+
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2016
+
+    李曌
+
+<br>
+Powered by Octopress.
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+
+
+
+
+</body>
+</html>
